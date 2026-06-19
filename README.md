@@ -1,6 +1,10 @@
 # Telegpad 🚀
 An AI-powered, high-performance note-taking and creativity ecosystem (Micro-SaaS) built as a Telegram Mini App.
 
+## 📱 Live Demo / MVP Access
+Experience Telegpad directly inside Telegram:
+👉 **[Launch Telegpad Mini App](https://t.me/TelegpadBot/notes)** *(Open in Telegram)*
+
 ## 🛠️ Tech Stack & Architecture
 Telegpad bypasses traditional, heavy VPS constraints by utilizing a cutting-edge serverless architecture:
 - **Frontend:** Clean HTML5, CSS3, and JavaScript optimized for Telegram Web App Webview layers.
@@ -13,7 +17,3 @@ Telegpad bypasses traditional, heavy VPS constraints by utilizing a cutting-edge
 - **Native Web3 Ready Monetization:** Complete, secure webhook handling for Telegram Stars to manage scalable token packages and subscription tiers.
 - **Dual-Reward Viral Loop:** An embedded, automated referral engine built directly into the database initialization flow.
 - **Ultra-Low Latency:** Edge computing deployment ensuring sub-millisecond response times globally.
-
-## 📱 Live Demo / MVP Access
-Experience Telegpad directly inside Telegram:
-👉 **[Launch Telegpad Mini App](https://t.me/TelegpadBot/notes)** *(Open in Telegram)*
