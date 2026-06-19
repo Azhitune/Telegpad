@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Telegpad</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #fff);
+            --text-color: var(--tg-theme-text-color, #000);
+            --secondary-bg: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            --button-color: var(--tg-theme-button-color, #3390ec);
+            --button-text: var(--tg-theme-button-text-color, #fff);
+            --hint-color: var(--tg-theme-hint-color, #999);
+        }
+
+        body {
+            margin: 0;
+            padding: 15px;
+            font-family: system-ui, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            padding-bottom: 80px;
+        }
+
+        .note-card {
+            background: var(--secondary-bg);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .note-card:active {
+            transform: scale(0.98);
+        }
+
+        .note-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .note-meta {
+            font-size: 0.8rem;
+            color: var(--hint-color);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--button-color);
+            color: var(--button-text);
+            border: none;
+            font-size: 24px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-color);
+            width: 90%;
+            max-width: 400px;
+            border-radius: 15px;
+            padding: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .ai-modal-actions button {
+            font-size: 0.85rem;
+            padding: 10px 5px;
+        }
+
+        input[type="text"],
+        textarea,
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid var(--hint-color);
+            border-radius: 8px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        .btn-primary {
+            background: var(--button-color);
+            color: var(--button-text);
+        }
+
+        .btn-danger {
+            background: #ff3b30;
+            color: white;
+            margin-top: 10px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .checklist-item input[type="checkbox"] {
+            transform: scale(1.3);
+        }
+
+        .checklist-item input[type="text"] {
+            margin-bottom: 0;
+            border: none;
+            border-bottom: 1px solid transparent;
+        }
+
+        .checklist-item input[type="text"]:focus {
+            border-bottom: 1px solid var(--button-color);
+        }
+
+        .completed input[type="text"] {
+            text-decoration: line-through;
+            color: var(--hint-color);
+        }
+
+        .type-switcher {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .type-btn {
+            flex: 1;
+            padding: 8px;
+            background: var(--secondary-bg);
+            border: 1px solid var(--hint-color);
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .type-btn.active {
+            background: var(--button-color);
+            color: var(--button-text);
+            border-color: var(--button-color);
+        }
+
+        .security-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--hint-color);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        body.light-mode {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --secondary-bg: #f0f0f0;
+        }
+
+        body.dark-mode {
+            --bg-color: #1e1e1e;
+            --text-color: #ffffff;
+            --secondary-bg: #2c2c2c;
+        }
+
+        .header-btn {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            padding: 3px;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .setting-option {
+            padding: 10px;
+            border: 1px solid var(--hint-color);
+            border-radius: 8px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .setting-option.active {
+            background: var(--button-color);
+            color: var(--button-text);
+            border-color: var(--button-color);
+        }
+
+        .welcome-content {
+            text-align: center;
+        }
+
+        .welcome-logo {
+            font-size: 60px;
+            margin-bottom: 10px;
+        }
+
+        .infinity-badge {
+            background: linear-gradient(#0426e9, #00dbde, #fc00ff);
+            color: #d6d6d6;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(195, 0, 255, 0.5);
+            animation: glow 2s infinite alternate;
+        }
+
+        .balance {
+            background: linear-gradient(#e9ac04, #ece8b0, #afa954);
+            color: #10140d;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(76, 74, 77, 0.5);
+        }
+
+        .tasks {
+            background: linear-gradient(#81ec1d, #cdecb0, #88af54);
+            color: #201913;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 5px #00dbde;
+            }
+
+            to {
+                box-shadow: 0 0 15px #fc00ff;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="home-view">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <h3 style="margin:0;" data-i18n="my_notes">Notes</h3>
+                <div class="balance" id="status-container" onclick="showWalletModal()" style="cursor: pointer;">
+                    <span id="user-balance-icon">🪙</span>
+                    <span id="user-balance-text">0</span>
+                </div>
+                <div id="user-status-badge"></div>
+            </div>
+            <div>
+                <button onclick="showAppSettings()" class="header-btn">⚙️</button>
+                <button onclick="showAppInfo()" class="header-btn">ℹ️</button>
+            </div>
+        </div>
+        <button data-i18n="aia_btn" class="btn btn-secondary" onclick="openAiModal()"
+            style="background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: white; border: none;">
+            ✨ AI Assistant
+        </button>
+
+        <div id="ai-assistant-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 data-i18n="aia_title">✨ Smart Content Assistantا</h3>
+                <span class="close-btn" onclick="closeAiModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <label data-i18n="aia_topic_label" for="ai-topic">Subject or Idea:</label>
+                <textarea data-i18n="aia_topic_text" id="ai-topic"
+                    placeholder="Anythings..." rows="4"
+                    style="width: 100%; border-radius: 8px; padding: 8px; border: 1px solid var(--tg-theme-hint-color); background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); font-family: inherit; margin-bottom: 12px; resize: none;"></textarea>
+
+                <label data-i18n="aia_type_label" for="ai-type">Type</label>
+                <select id="ai-type"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--tg-theme-hint-color); background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); font-family: inherit; margin-bottom: 15px;">
+                    <option data-i18n="aia_option_idea" value="💡 Ideation and brainstorming">💡 Ideation and brainstorming
+                    </option>
+                    <option data-i18n="aia_option_text" value="📝 Draft text or short article">📝 Draft text or short article
+                        کوتاه</option>
+                    <option data-i18n="aia_option_email" value="💼 Formal business email or letter">💼 Formal business email or letter
+                    </option>
+                    <option data-i18n="aia_option_caption" value="📱 Social media post caption">📱 Social media post caption
+                        اجتماعی</option>
+                    <option data-i18n="aia_option_rewrite" value="🎯 Summarize and rewrite texts">🎯 Summarize and rewrite texts</option>
+                    <option data-i18n="aia_option_lyric" value="🎵 Creative text (poem, rap verse or scenario)">🎵 Creative text (poem, rap verse or scenario)
+                    </option>
+                </select>
+
+                <button data-i18n="aia_gen_btn" id="generate-ai-btn" class="btn btn-primary"
+                    onclick="generateAiContent()" style="width: 100%; padding: 12px; margin-bottom: 12px;">Generate Text</button>
+
+                <div id="ai-result-container"
+                    style="display: none; border-top: 1px solid var(--tg-theme-hint-color); padding-top: 12px;">
+                    <label data-i18n="aia_gen_label">📋 Generated Content:</label>
+                    <div id="ai-output"
+                        style="background: var(--tg-theme-secondary-bg-color); padding: 12px; border-radius: 8px; max-height: 200px; overflow-y: auto; font-size: 14px; white-space: pre-wrap; direction: rtl; text-align: right; margin-bottom: 12px; border: 1px dashed var(--tg-theme-button-color);">
+                    </div>
+                    <button data-i18n="aia_gen_to_note" class="btn btn-success" onclick="insertAiTextToNote()"
+                        style="width: 100%;">⚡ Save to Notes</button>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <div id="notes-container"></div>
+    </div>
+
+    <button class="fab" onclick="openEditor()">+</button>
+
+
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal-content">
+            <h3 data-i18n="settings">Settings</h3>
+
+            <p data-i18n="language">Language</p>
+            <div class="settings-grid">
+                <div class="setting-option" onclick="changeLanguage('fa')" id="lang-fa">فارسی</div>
+                <div class="setting-option" onclick="changeLanguage('en')" id="lang-en">English</div>
+                <div class="setting-option" onclick="changeLanguage('ru')" id="lang-ru">Русский</div>
+                <div class="setting-option" onclick="changeLanguage('ar')" id="lang-ar">العربية</div>
+                <div class="setting-option" onclick="changeLanguage('zh')" id="lang-zh">中文</div>
+            </div>
+
+            <p data-i18n="theme">Theme</p>
+            <div class="settings-grid">
+                <div class="setting-option" onclick="changeTheme('system')" id="theme-system" data-i18n="theme_system">
+                    System</div>
+                <div class="setting-option" onclick="changeTheme('light')" id="theme-light" data-i18n="theme_light">Light
+                </div>
+                <div class="setting-option" onclick="changeTheme('dark')" id="theme-dark" data-i18n="theme_dark">Dark
+                </div>
+            </div>
+
+            <button class="btn" style="background:var(--secondary-bg); color:var(--text-color)"
+                onclick="closeModal('settings-modal')" data-i18n="close">Close</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="info-modal">
+        <div class="modal-content welcome-content">
+            <div class="welcome-logo">📝</div>
+            <h3 style="margin-top:0;">Telegpad</h3>
+            <p data-i18n="app_desc1">Your secure, cloud-based notebook powered by Cloudflare and accessible only through your Telegram account</p>
+            <a class="infinity-badge" href="https://t.me/CodeCosmic" data-i18n="app_desc2">📢 Join Channel</a>
+
+            <div
+                style="text-align: right; background: var(--secondary-bg); padding: 10px; border-radius: 8px; margin: 15px 0; font-size: 0.9rem;">
+                <p>👨‍💻 <b>Developer:</b> <span id="dev-name"> Ali Azhman</span></p>
+                <p>📢 <b>ID:</b> @AliAzhman</p>
+                <p>🤖 <b>Version:</b> 2.0.0</p>
+            </div>
+
+            <button class="btn btn-primary" onclick="closeModal('info-modal')" data-i18n="got_it">Confirm</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editor-modal">
+        <div class="modal-content">
+            <div class="type-switcher">
+                <div class="type-btn active" data-i18n="type_text" onclick="setNoteType('text')" id="btn-type-text">Text</div>
+                <div class="type-btn" data-i18n="type_checklist" onclick="setNoteType('checklist')"
+                    id="btn-type-checklist">Checklist</div>
+            </div>
+
+            <input type="text" data-i18n="placeholder_title" id="input-title" placeholder="Title">
+
+            <div id="area-text">
+                <textarea id="input-content-text" data-i18n="placeholder_content"
+                    placeholder="Text"></textarea>
+            </div>
+
+            <div id="area-checklist" class="hidden">
+                <div id="checklist-items"></div>
+                <button class="btn"
+                    style="background: var(--secondary-bg); color: var(--text-color); margin-bottom: 10px;"
+                    data-i18n="add_item" onclick="addChecklistItem()">Add</button>
+            </div>
+
+            <div class="security-section">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="check-lock" onchange="toggleLockInput()">
+                    <span data-i18n="lock_note">🔒 Lock</span>
+                </label>
+                <input type="password" data-i18n="placeholder_pin" id="input-pin" placeholder="4 Digits PIN"
+                    class="hidden" maxlength="4" style="margin-top: 10px; text-align: center; letter-spacing: 5px;">
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button class="btn btn-primary" data-i18n="btn_save" onclick="saveNote()">ذخیره</button>
+                <button class="btn btn-danger" data-i18n="btn_delete" id="btn-delete" onclick="deleteCurrentNote()">Delete</button>
+                <button class="btn" style="background: transparent; color: var(--hint-color);" data-i18n="btn_cancel"
+                    onclick="closeModal('editor-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="pin-modal">
+        <div class="modal-content" style="text-align: center;">
+            <h3 data-i18n="secure_note">🔐 Secret Note</h3>
+            <p data-i18n="enter_pin">Enter the PIN</p>
+            <input type="password" id="unlock-pin" maxlength="4"
+                style="text-align: center; font-size: 24px; letter-spacing: 10px; width: 60%; margin: 0 auto;">
+            <button class="btn btn-primary" data-i18n="btn_unlock" style="margin-top: 20px;" onclick="checkPin()">Open</button>
+            <button class="btn" style="margin-top: 10px; background: transparent;" data-i18n="btn_cancel"
+                onclick="closeModal('pin-modal')">Cancel</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="view-modal">
+        <div class="modal-content"
+            style="width: 100%; max-width: 100%; height: 100%; max-height: 100%; border-radius: 0; display: flex; flex-direction: column;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--hint-color); padding-bottom: 10px; margin-bottom: 15px;">
+                <h2 id="view-title" style="margin: 0; font-size: 1.4rem;"></h2>
+            </div>
+
+            <div id="view-content"
+                style="flex-grow: 1; overflow-y: auto; line-height: 1.6; font-size: 1.1rem; white-space: pre-wrap;">
+            </div>
+
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button class="btn btn-primary" data-i18n="btn_edit" id="btn-edit-mode" style="flex: 2;">Edit Note</button>
+                <button onclick="analyzeNote()" id="ai-analyze-btn" class="btn" data-i18n="btn_analysis_note"
+                    style="background: var(--tg-theme-button-color); margin-top: 10px;">
+                    ✨ AI Analytics
+                </button>
+                <button class="btn" style="flex: 1; background: var(--secondary-bg); color: var(--text-color);"
+                    data-i18n="btn_close" onclick="closeModal('view-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="ai-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="ai-modal-title" data-i18n="ai_modal_title" style="color: var(--accent-orange);">✨ AI Analysis
+            </h3>
+            <div id="ai-result-text"
+                style="margin: 15px 0; line-height: 1.6; max-height: 300px; overflow-y: auto; text-align: right;">
+            </div>
+            <div class="ai-modal-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button data-i18n="add_ai_res" onclick="appendAiToNote()" class="btn-primary">➕ Add</button>
+                <button data-i18n="share_ai_res" onclick="shareAiResult()" class="btn-primary">📤 Share</button>
+                <button data-i18n="copy_ai_res" onclick="copyAiResult()" class="btn-primary">📋 Copy</button>
+                <button data-i18n="btn_close" onclick="closeModal('ai-modal')" class="btn"
+                    style="grid-column: span 2;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="wallet-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 data-i18n="my_wallet" id="wallet-title">Wallet</h3>
+            <div class="balance-section" style="text-align: center; padding: 20px;">
+                <div style="font-size: 40px;" id="modal-balance-icon">🪙</div>
+                <div style="font-size: 24px; font-weight: bold;" id="modal-balance-value">0</div>
+                <p id="expiry-text" style="font-size: 12px; color: var(--hint-color);"></p>
+            </div>
+
+            <div style="display: grid; gap: 10px;">
+                <button class="balance" onclick="buyItem('tokens_7')">
+                    <span data-i18n="tokens_1_text">🪙 7 TOKENS</span>
+                    <span data-i18n="tokens_1_price">1 Stars ⭐</span>
+                </button>
+
+                <button class="balance" onclick="buyItem('tokens_16')">
+                    <span data-i18n="tokens_10_text">💰 16 TOKENs</span>
+                    <span data-i18n="tokens_10_price">2 Stars ⭐</span>
+                </button>
+
+                <button class="balance" onclick="buyItem('tokens_27')">
+                    <span data-i18n="tokens_30_text">📦 27 TOKENs</span>
+                    <span data-i18n="tokens_30_price">3 Stars ⭐</span>
+                </button>
+
+                <button id="btn_infinity" class="infinity-badge" onclick="buyItem('infinity_month')">
+                    <span data-i18n="infinity_week_text">♾️ 1 Month infinite</span>
+                    <span data-i18n="infinity_week_price">10 Stars ⭐</span>
+                </button>
+            </div>
+
+            <div class="referral-section"
+                style="margin-top: 15px; text-align: center; border-top: 1px solid rgba(128,128,128,0.2); padding-top: 15px;">
+                <p data-i18n="invite_description"
+                    style="font-size: 13px; color: var(--tg-theme-hint-color); margin-bottom: 10px;">
+                    Invite your friends and both of you will receive 3 tokens as a gift! 🎁
+                </p>
+                <button data-i18n="invite_btn" onclick="generateReferralLink()" id="invite-friends-btn" class="tasks">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                        <polyline points="16 6 12 2 8 6"></polyline>
+                        <line x1="12" y1="2" x2="12" y2="15"></line>
+                    </svg>
+                    Invite friends
+                </button>
+            </div>
+
+            <button data-i18n="btn_close" class="btn" onclick="closeModal('wallet-modal')">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        const WORKER_URL = 'https://handle-data-01.telnotepad.workers.dev/notes';
+        let notes = [];
+        let currentNoteId = null;
+        let currentType = 'text';
+        let pendingNoteId = null;
+        let currentNoteContent = "";
+
+        async function fetchNotes() {
+            const initData = tg.initData;
+            if (currentLang === 'fa') {
+                tg.MainButton.setText('در حال بارگذاری...').show().disable();
+            }
+            else {
+                tg.MainButton.setText('Loading...').show().disable();
+            }
+            try {
+                const response = await fetch(WORKER_URL, {
+                    headers: { 'Authorization': `Bearer ${initData}` }
+                });
+                if (response.ok) {
+                    notes = await response.json();
+                    renderList();
+                }
+            } catch (e) { console.error(e); }
+            tg.MainButton.hide();
+        }
+
+        async function saveNote() {
+            const title = document.getElementById('input-title').value.trim();
+            if (!title) {
+                if (currentLang === 'fa') {
+                    return tg.showAlert("عنوان نمی‌تواند خالی باشد!");
+                }
+                else {
+                    return tg.showAlert("Title cannot be empty!");
+                }
+            }
+
+            const isLocked = document.getElementById('check-lock').checked;
+            const pin = document.getElementById('input-pin').value;
+
+            if (isLocked && (!pin || pin.length !== 4)) {
+                if (currentLang === 'fa') {
+                    return tg.showAlert("پین کد ۴ رقمی الزامی است");
+                }
+                else {
+                    return tg.showAlert("A 4-digit PIN code is required");
+                }
+            }
+
+            let content;
+            if (currentType === 'text') {
+                content = document.getElementById('input-content-text').value;
+            } else {
+                content = [];
+                document.querySelectorAll('#checklist-items .checklist-item').forEach(row => {
+                    const text = row.querySelector('input[type="text"]').value.trim();
+                    const done = row.querySelector('input[type="checkbox"]').checked;
+                    if (text) content.push({ text, done });
+                });
+            }
+
+            const noteObj = {
+                id: currentNoteId || undefined,
+                title: title,
+                type: currentType,
+                content: content,
+                is_locked: isLocked,
+                pin: isLocked ? pin : null
+            };
+
+            try {
+                if (currentLang === 'fa') {
+                    tg.MainButton.setText('در حال ذخیره...').show().disable();
+                }
+                else {
+                    tg.MainButton.setText('Saving...').show().disable();
+                }
+                const response = await fetch(WORKER_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${tg.initData}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(noteObj)
+                });
+
+                if (response.ok) {
+                    closeModal('editor-modal');
+                    await fetchNotes();
+                    tg.showPopup({ message: "ذخیره شد!" });
+                }
+                await fetchNotes();
+                closeModal('editor-modal');
+            } catch (e) { tg.showAlert("Save Error: " + e.message); }
+            tg.MainButton.hide();
+        }
+
+        async function deleteCurrentNote() {
+            if (!currentNoteId) return;
+            let pmsg;
+            if (currentLang === 'fa') {
+                pmsg = "از حذف این یادداشت مطمئن هستید؟";
+            }
+            else {
+                pmsg = "Are you shure you want to delete this note?"
+            }
+            tg.showConfirm(pmsg, async (ok) => {
+                if (!ok) return;
+                try {
+                    if (currentLang === 'fa') {
+                        tg.MainButton.setText('در حال حذف...').show().disable();
+                    }
+                    else {
+                        tg.MainButton.setText('Deleting...').show().disable();
+                    }
+                    const response = await fetch(`${WORKER_URL}?id=${currentNoteId}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${tg.initData}` }
+                    });
+                    if (response.ok) {
+                        closeModal('editor-modal');
+                        await fetchNotes();
+                        if (currentLang === 'fa') {
+                            tg.showPopup({ message: "حذف شد!" });
+                        }
+                        else {
+                            tg.showAlert("Deleted!");
+                        }
+                    }
+                    await fetchNotes();
+                    closeModal('editor-modal');
+                } catch (e) { tg.showAlert("Error: " + e.message); }
+                tg.MainButton.hide();
+            });
+        }
+
+        function renderList() {
+            const container = document.getElementById('notes-container');
+            container.innerHTML = '';
+            notes.forEach(note => {
+                const el = document.createElement('div');
+                el.className = 'note-card';
+                el.onclick = () => tryOpenNote(note.id);
+                const icon = note.is_locked ? '🔒' : (note.type === 'checklist' ? '☑️' : '📝');
+                el.innerHTML = `<span class="note-title">${icon} ${note.title}</span>`;
+                container.appendChild(el);
+            });
+        }
+
+        function tryOpenNote(id) {
+            const note = notes.find(n => n.id === id);
+            if (note.is_locked) {
+                pendingNoteId = id;
+                document.getElementById('unlock-pin').value = '';
+                document.getElementById('pin-modal').classList.add('active');
+            } else {
+                renderViewModal(note);
+            }
+        }
+
+        function renderViewModal(note) {
+            currentNoteId = note.id;
+            document.getElementById('view-title').innerText = note.title;
+            const contentEl = document.getElementById('view-content');
+            contentEl.innerHTML = '';
+
+            let displayContent = note.content;
+
+            if (typeof displayContent === 'string') {
+                try {
+                    displayContent = JSON.parse(displayContent);
+                } catch (e) {
+				//
+                }
+            }
+
+            if (note.type === 'text' || typeof displayContent === 'string') {
+                contentEl.innerText = displayContent;
+                currentNoteContent = displayContent;
+            } else if (Array.isArray(displayContent)) {
+                const list = document.createElement('div');
+                displayContent.forEach(item => {
+                    const d = document.createElement('div');
+                    d.style.cssText = 'margin: 12px 0; display: flex; align-items: center; gap: 10px; font-size: 1.1rem;';
+                    d.innerHTML = `
+                        <input type="checkbox" ${item.done ? 'checked' : ''} disabled style="transform: scale(1.2);"> 
+                        <span style="${item.done ? 'text-decoration: line-through; color: var(--hint-color);' : ''}">${item.text}</span>
+                    `;
+                    list.appendChild(d);
+                });
+                contentEl.appendChild(list);
+            } else {
+                if (currentLang === 'fa') {
+                    contentEl.innerText = "محتوایی برای نمایش وجود ندارد.";
+                }
+                else {
+                    contentEl.innerText = "There is no content to display.";
+                }
+            }
+
+            document.getElementById('btn-edit-mode').onclick = () => {
+                closeModal('view-modal');
+                openEditor(note);
+            };
+            document.getElementById('view-modal').classList.add('active');
+        }
+
+        async function checkPin() {
+            const pin = document.getElementById('unlock-pin').value;
+            try {
+                const response = await fetch('https://handle-data-01.telnotepad.workers.dev/verify-pin', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${tg.initData}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ noteId: pendingNoteId, pin: pin })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    closeModal('pin-modal');
+                    renderViewModal(notes.find(n => n.id === pendingNoteId));
+                } else {
+                    if (currentLang === 'fa') {
+                        tg.showAlert("پین اشتباه است");
+                    }
+                    else {
+                        tg.showAlert("Wrong PIN");
+                    }
+                }
+            } catch (e) { tg.showAlert("Unknown Error!"); }
+        }
+
+        function openEditor(note = null) {
+            currentNoteId = note ? note.id : null;
+
+            document.getElementById('btn-delete').style.display = note ? 'block' : 'none';
+            document.getElementById('input-title').value = note ? note.title : '';
+            document.getElementById('checklist-items').innerHTML = '';
+            document.getElementById('input-pin').value = '';
+
+            let contentData = note ? note.content : '';
+            if (note && typeof contentData === 'string') {
+                try {
+                    const parsed = JSON.parse(contentData);
+                    contentData = parsed;
+                } catch (e) {
+                }
+            }
+
+            const type = note ? (note.type || (Array.isArray(contentData) ? 'checklist' : 'text')) : 'text';
+            setNoteType(type);
+
+            if (type === 'text') {
+                document.getElementById('input-content-text').value =
+                    (typeof contentData === 'string') ? contentData : JSON.stringify(contentData);
+            } else {
+                if (Array.isArray(contentData)) {
+                    contentData.forEach(item => addChecklistItem(item.text, item.done));
+                }
+				
+                if (document.getElementById('checklist-items').children.length === 0) {
+                    addChecklistItem();
+                }
+            }
+
+            const isLocked = note ? (note.is_locked == 1 || note.is_locked === true) : false;
+            document.getElementById('check-lock').checked = isLocked;
+            toggleLockInput();
+
+            document.getElementById('editor-modal').classList.add('active');
+        }
+
+        function openUpdateEditor(note = null, new_text) {
+            currentNoteId = note ? note.id : null;
+
+            document.getElementById('btn-delete').style.display = note ? 'block' : 'none';
+            document.getElementById('input-title').value = "";
+            document.getElementById('checklist-items').innerHTML = '';
+            document.getElementById('input-pin').value = '';
+
+            document.getElementById('input-content-text').value = new_text;
+
+            const isLocked = note ? (note.is_locked == 1 || note.is_locked === true) : false;
+            document.getElementById('check-lock').checked = isLocked;
+            toggleLockInput();
+
+            document.getElementById('editor-modal').classList.add('active');
+        }
+
+        function setNoteType(type) {
+            currentType = type;
+            document.getElementById('btn-type-text').className = `type-btn ${type === 'text' ? 'active' : ''}`;
+            document.getElementById('btn-type-checklist').className = `type-btn ${type === 'checklist' ? 'active' : ''}`;
+            document.getElementById('area-text').style.display = type === 'text' ? 'block' : 'none';
+            document.getElementById('area-checklist').style.display = type === 'checklist' ? 'block' : 'none';
+        }
+
+        function addChecklistItem(text = '', done = false) {
+            const div = document.createElement('div');
+            div.className = 'checklist-item';
+            div.innerHTML = `<input type="checkbox" ${done ? 'checked' : ''}> <input type="text" value="${text}"> <span onclick="this.parentElement.remove()" style="color:red">✕</span>`;
+            document.getElementById('checklist-items').appendChild(div);
+        }
+
+        function toggleLockInput() {
+            document.getElementById('input-pin').style.display = document.getElementById('check-lock').checked ? 'block' : 'none';
+        }
+
+
+        let currentAiResult = "";
+        async function analyzeNote() {
+            const btn = document.getElementById('ai-analyze-btn');
+            let btn_text = btn.innerText;
+            if (currentLang === 'fa') {
+                btn.innerText = "در حال تحلیل... 🧠";
+            } else { btn.innerText = "Analyzing... 🧠"; }
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('https://users-settings.telnotepad.workers.dev/analyze-note', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${tg.initData}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ noteContent: currentNoteContent })
+                });
+                const data = await response.json();
+
+                if (data.analysis) {
+                    currentAiResult = data.analysis;
+                    document.getElementById('ai-result-text').innerText = currentAiResult;
+                    document.getElementById('ai-modal').classList.add('active');
+                } else {
+                    tg.showAlert(data.error || "Sorry! AI model is busy now!");
+                }
+            } catch (e) {
+                if (currentLang === 'fa') {
+                    tg.showAlert("ارتباط با سرور برقرار نشد.");
+                }
+                else {
+                    tg.showAlert("Can not connect to server.");
+                }
+            } finally {
+                btn.innerText = btn_text;
+                btn.disabled = false;
+            }
+        }
+
+        async function appendAiToNote() {
+            const newContent = "\n\n--- AI ---\n" + currentAiResult;
+            tg.showConfirm("Are you shure?", (ok) => {
+                if (ok) {
+                    openUpdateEditor(currentNoteId, currentAiResult);
+                    closeModal('ai-modal');
+                    closeModal('view-modal');
+                }
+            });
+        }
+
+        function shareAiResult() {
+            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent("خلاصه یادداشت من با Telegpad:\n\n" + currentAiResult)}`;
+            tg.openTelegramLink(shareUrl);
+        }
+
+        function copyAiResult() {
+            navigator.clipboard.writeText(currentAiResult).then(() => {
+                if (currentLang === 'fa') {
+                    tg.showAlert("کپی شد! 📋");
+                }
+                else {
+                    tg.showAlert("Copied! 📋");
+                }
+            });
+        }
+
+        const translations = {
+            fa: {
+                my_notes: "یادداشت‌ها",
+                settings: "تنظیمات",
+                language: "زبان برنامه",
+                theme: "پوسته ظاهری",
+                theme_system: "هماهنگ با تلگرام",
+                theme_light: "روشن",
+                theme_dark: "تاریک",
+                close: "بستن",
+                app_desc1: "دفترچه یادداشت امن و ابری شما بر بستر کلودفلر و قابل دسترسی فقط از طریق اکانت تلگرام",
+                app_desc2: "📢 پیوستن به کانال",
+                got_it: "شروع کن!",
+                type_text: "متن ساده",
+                type_checklist: "چک‌لیست",
+                placeholder_title: "عنوان یادداشت (الزامی)",
+                placeholder_content: "متن خود را بنویسید...",
+                add_item: "+ افزودن آیتم",
+                lock_note: "🔒 قفل کردن این یادداشت",
+                placeholder_pin: "پین کد ۴ رقمی",
+                btn_save: "ذخیره",
+                btn_delete: "حذف یادداشت",
+                btn_cancel: "انصراف",
+                btn_edit: "ویرایش یادداشت",
+                btn_close: "بستن",
+                btn_analysis_note: "✨ تحلیل هوشمند با هوش‌واره",
+                secure_note: "🔐 یادداشت محرمانه",
+                enter_pin: "لطفاً پین کد را وارد کنید:",
+                btn_unlock: "باز کردن",
+                confirm_delete: "آیا از حذف این یادداشت مطمئن هستید؟",
+                err_title: "عنوان نمی‌تواند خالی باشد.",
+                err_pin: "لطفاً یک پین کد ۴ رقمی وارد کنید.",
+                donate_title: "حمایت از پروژه",
+                donate_desc: " با حمایت شما، Telegpad همیشه رایگان و بدون تبلیغات باقی می‌ماند.",
+                my_wallet: "کیف‌پول من",
+                tokens_1_price: "۱ ستاره ⭐",
+                tokens_1_text: "۷ توکن 💰",
+                tokens_10_price: "۲ ستاره ⭐",
+                tokens_10_text: "💰💰 بسته ۱۶ توکنی",
+                tokens_30_price: "۳ ستاره ⭐",
+                tokens_30_text: "💰💰💰 بسته ۲۷ توکنی",
+                infinity_week_price: "۱۰ ستاره ⭐",
+                infinity_week_text: "♾️ اشتراک یک ماهه (بی‌نهایت)",
+                ai_modal_title: "✨ تحلیل هوش‌واره",
+                add_ai_res: "افزودن به یادداشت",
+                share_ai_res: "اشتراک گذاری",
+                copy_ai_res: "رونوشت متن", invite_description: " دوستانت رو دعوت کن و هر دو ۳ توکن هدیه بگیرید! 🎁", invite_btn: "دعوت از دوستان",
+                aia_title: "✨ دستیار هوشمند محتوا", aia_topic_label: "موضوع یا ایده اولیه شما:", aia_type_label: "نوع متن خروجی:",
+                aia_topic_text: "مثال: ایده‌هایی برای یک آهنگ رپ، یا پیش‌نویس متن یک قرارداد کاری...", aia_gen_btn: "تولید متن (۲ توکن 🪙) 🚀",
+                aia_option_idea: "💡 ایده پردازی و طوفان فکری", aia_option_text: "📝 پیش‌نویس متن یا مقاله کوتاه",
+                aia_option_email: "💼 ایمیل یا نامه اداری رسمی", aia_option_caption: "📱 کپشن پست شبکه‌های اجتماعی",
+                aia_option_rewrite: "🎯 خلاصه سازی و بازنویسی متون", aia_option_lyric: "🎵 متن خلاقانه (شعر، رپ‌ورس یا سناریو)",
+                aia_gen_label: "📋 متن تولید شده:", aia_gen_to_note: "⚡ انتقال مستقیم به یادداشت", aia_btn: "✨ دستیار هوشمند"
+            },
+            en: {
+                my_notes: "Notes",
+                settings: "Settings",
+                language: "Language",
+                theme: "Appearance",
+                theme_system: "System Default",
+                theme_light: "Light",
+                theme_dark: "Dark",
+                close: "Close",
+                app_desc1: "Your secure, cloud-based notebook powered by Cloudflare and accessible only through your Telegram account",
+                app_desc2: "📢 Join Channel",
+                got_it: "Let's Start!",
+                type_text: "Plain Text",
+                type_checklist: "Checklist",
+                placeholder_title: "Note Title (Required)",
+                placeholder_content: "Write your note here...",
+                add_item: "+ Add Item",
+                lock_note: "🔒 Lock this note",
+                placeholder_pin: "4-digit PIN",
+                btn_save: "Save",
+                btn_delete: "Delete Note",
+                btn_cancel: "Cancel",
+                btn_edit: "Edit Note",
+                btn_close: "Close",
+                btn_analysis_note: "✨ Smart analysis with AI",
+                secure_note: "🔐 Secure Note",
+                enter_pin: "Please enter your PIN:",
+                btn_unlock: "Unlock",
+                confirm_delete: "Are you sure you want to delete this note?",
+                err_title: "Title cannot be empty.",
+                err_pin: "Please enter a 4-digit PIN code.",
+                donate_title: "Support the project",
+                donate_desc: "With your support, Telegpad will always remain free and ad-free.",
+                my_wallet: "My Wallet",
+                tokens_1_price: "1 stars ⭐",
+                tokens_1_text: "7 Tokens 💰",
+                tokens_10_price: "2 stars ⭐",
+                tokens_10_text: "💰💰 16 Tokens Pack",
+                tokens_30_price: "3 stars ⭐",
+                tokens_30_text: "💰💰💰 27 Tokens Pack",
+                infinity_week_price: "10 stars ⭐",
+                infinity_week_text: "♾️ One Month Subscription (Infinity)",
+                ai_modal_title: "✨ AI Analytics",
+                add_ai_res: "Add to Note",
+                share_ai_res: "Share",
+                copy_ai_res: "Copy Text", invite_description: "Invite your friends and both of you will receive 3 tokens as a gift! 🎁", invite_btn: "Invite Friends",
+                aia_title: "✨ Smart Content Assistant", aia_topic_label: "Your initial topic or idea:", aia_type_label: "Output text type:",
+                aia_topic_text: "Example: Ideas for a rap song, or a draft of a business contract...", aia_gen_btn: "Generate text (2 tokens 🪙) 🚀",
+                aia_option_idea: "💡 Ideation and brainstorming", aia_option_text: "📝 Draft text or short article",
+                aia_option_email: "💼 Formal business email or letter", aia_option_caption: "📱 Social media post caption",
+                aia_option_rewrite: "🎯 Summarize and rewrite texts", aia_option_lyric: "🎵 Creative text (poem, rap verse or scenario)",
+                aia_gen_label: "📋 Generated text:", aia_gen_to_note: "⚡ Direct transfer to note", aia_btn: "✨ Smart Assistant"
+            },
+            ru: {
+                my_notes: "заметки",
+                settings: "Настройки",
+                language: "Язык приложения",
+                theme: "Оформление",
+                theme_system: "Как в Telegram",
+                theme_light: "Светлая",
+                theme_dark: "Темная",
+                close: "Закрыть",
+                app_desc1: "Ваш защищенный облачный блокнот на базе Cloudflare, доступ к которому осуществляется только через вашу учетную запись Telegram.",
+                app_desc2: "📢 Присоединиться к каналу",
+                got_it: "Начать!",
+                type_text: "Текст",
+                type_checklist: "Чек-лист",
+                placeholder_title: "Заголовок (обязательно)",
+                placeholder_content: "Напишите что-нибудь...",
+                add_item: "+ Добавить",
+                lock_note: "🔒 Заблокировать",
+                placeholder_pin: "4-значный ПИН",
+                btn_save: "Сохранить",
+                btn_delete: "Удалить",
+                btn_cancel: "Отмена",
+                btn_edit: "Редактировать заметку",
+                btn_close: "Закрыть",
+                btn_analysis_note: "✨ Интеллектуальный анализ с помощью ИИ",
+                secure_note: "🔐 Защищенная заметка",
+                enter_pin: "Введите ПИН-код:",
+                btn_unlock: "Открыть",
+                err_title: "Заголовок не может быть пустым.",
+                err_pin: "Пожалуйста, введите 4-значный PIN-код.",
+                donate_title: "Поддержите проект",
+                donate_desc: "Благодаря вашей поддержке Telegpad всегда будет оставаться бесплатным и без рекламы.",
+                my_wallet: "Мой кошелек",
+                tokens_1_price: "1 звезда ⭐",
+                tokens_1_text: "7 токенов 💰",
+                tokens_10_price: "2 звезд ⭐",
+                tokens_10_text: "💰💰 Набор из 16 токенов",
+                tokens_30_price: "10 звезд ⭐",
+                tokens_30_text: "💰💰💰 Набор из 27 токенов",
+                infinity_week_price: "10 звезд ⭐",
+                infinity_week_text: "♾️ Подписка на один месяц (бесконечность)",
+                ai_modal_title: "✨ Аналитика ИИ",
+                add_ai_res: "Добавить в заметку",
+                share_ai_res: "Поделиться",
+                copy_ai_res: "Скопировать текст", invite_description: "Пригласите друзей, и вы оба получите по 3 токена в подарок! 🎁", invite_btn: "Пригласить друзей",
+                aia_title: "✨ Умный помощник по работе с контентом", aia_topic_label: "Ваша тема или идея:", aia_type_label: "Тип текста:",
+                aia_topic_text: "Пример: идеи для рэп-композиции или черновик делового договора...", aia_gen_btn: "Сгенерировать текст (2 токена 🪙) 🚀",
+                aia_option_idea: "💡 Генерация идей и мозговой штурм", aia_option_text: "📝 Черновик текста или короткая статья",
+                aia_option_email: "💼 Официальное деловое письмо", aia_option_caption: "📱 Подпись к посту в соцсетях",
+                aia_option_rewrite: "🎯 Краткое изложение и переработка текста", aia_option_lyric: "🎵 Творческий текст (стихотворение, рэп-куплет или сценарий)",
+                aia_gen_label: "📋 Сгенерированный текст:", aia_gen_to_note: "⚡ Прямое сохранение в заметку", aia_btn: "✨ Умный помощник"
+            },
+            ar: {
+                my_notes: "ملاحظاتي",
+                settings: "الإعدادات",
+                language: "لغة التطبيق",
+                theme: "المظهر",
+                theme_system: "تلقائي",
+                theme_light: "فاتح",
+                theme_dark: "داكن",
+                close: "إغلاق",
+                app_desc1: "مفكرة آمنة تعتمد على الحوسبة السحابية، مدعومة من Cloudflare، ولا يمكن الوصول إليها إلا من خلال حسابك على تيليجرام.",
+                app_desc2: "📢 انضم إلى القناة",
+                got_it: "ابدأ الآن!",
+                type_text: "نص",
+                type_checklist: "قائمة مهام",
+                placeholder_title: "عنوان الملاحظة (مطلوب)",
+                placeholder_content: "اكتب ملاحظتك هنا...",
+                add_item: "+ إضافة عنصر",
+                lock_note: "🔒 قفل الملاحظة",
+                placeholder_pin: "رمز PIN من 4 أرقام",
+                btn_save: "حفظ",
+                btn_delete: "حذف",
+                btn_cancel: "إلغاء",
+                btn_edit: "تعديل الملاحظة",
+                btn_close: "إغلاق",
+                btn_analysis_note: "✨ تحليل ذكي باستخدام الذكاء الاصطناعي",
+                secure_note: "🔐 ملاحظة آمنة",
+                enter_pin: "يرجى إدخال رمز PIN:",
+                btn_unlock: "فتح",
+                err_title: "لا يمكن أن يكون العنوان فارغًا.",
+                err_pin: "الرجاء إدخال رمز PIN مكون من 4 أرقام.",
+                donate_title: "ادعم المشروع",
+                donate_desc: "بدعمكم، سيبقى تطبيق Telegpad مجانيًا وخاليًا من الإعلانات دائمًا.",
+                my_wallet: "محفظتي",
+                tokens_1_price: "نجمة واحدة ⭐",
+                tokens_1_text: "۷ رموز 💰",
+                tokens_10_price: "۲ نجوم ⭐",
+                tokens_10_text: "حزمة ۱۶ رموز 💰💰",
+                tokens_30_price: "۳ نجوم ⭐",
+                tokens_30_text: "حزمة ۲۷ رمزًا 💰💰💰",
+                infinity_week_price: "۱۰ نجمة ⭐",
+                infinity_week_text: "♾️ اشتراك لمدة شهر واحد (إنفينيتي)",
+                ai_modal_title: "✨ تحليلات الذكاء الاصطناعي",
+                add_ai_res: "إضافة إلى الملاحظة",
+                share_ai_res: "مشاركة",
+                copy_ai_res: "نسخ النص", invite_description: "ادعُ أصدقاءك وسيحصل كلٌّ منكما على 3 رموز كهدية! 🎁", invite_btn: "دعوة الأصدقاء",
+                aia_title: "✨ مساعد المحتوى الذكي", aia_topic_label: "موضوعك أو فكرتك الأولية:", aia_type_label: "نوع النص المطلوب:",
+                aia_topic_text: "مثال: أفكار لأغنية راب، أو مسودة عقد عمل...", aia_gen_btn: "إنشاء النص (2 توكن 🪙) 🚀",
+                aia_option_idea: "💡 توليد الأفكار والعصف الذهني", aia_option_text: "📝 مسودة نص أو مقال قصير",
+                aia_option_email: "💼 رسالة بريد إلكتروني أو خطاب عمل رسمي", aia_option_caption: "📱 نص تعليقي لمنشورات التواصل الاجتماعي",
+                aia_option_rewrite: "🎯 تلخيص النصوص وإعادة صياغتها", aia_option_lyric: "🎵 نص إبداعي (قصيدة، مقطع راب، أو سيناريو)",
+                aia_gen_label: "📋 النص المُنشأ:", aia_gen_to_note: "⚡ نقل مباشر إلى الملاحظات", aia_btn: "✨ مساعد ذكي"
+            },
+            zh: {
+                my_notes: "我的笔记",
+                settings: "设置",
+                language: "语言",
+                theme: "外观",
+                theme_system: "系统默认",
+                theme_light: "浅色模式",
+                theme_dark: "深色模式",
+                close: "关闭",
+                app_desc1: "您的安全云端笔记本，由 Cloudflare 提供支持，只能通过您的 Telegram 帐户访问。",
+                app_desc2: "📢 加入频道",
+                got_it: "开始吧！",
+                type_text: "文本",
+                type_checklist: "清单",
+                placeholder_title: "标题（必填）",
+                placeholder_content: "在此输入内容...",
+                add_item: "+ 添加项目",
+                lock_note: "🔒 锁定笔记",
+                placeholder_pin: "4位PIN码",
+                btn_save: "保存",
+                btn_delete: "删除笔记",
+                btn_cancel: "取消",
+                btn_edit: "编辑笔记",
+                btn_close: "关闭",
+                btn_analysis_note: "✨ 使用人工智能进行智能分析",
+                secure_note: "🔐 安全笔记",
+                enter_pin: "请输入PIN码：",
+                btn_unlock: "解锁",
+                err_title: "标题不能为空。",
+                err_pin: "请输入4位数字的PIN码。",
+                donate_title: "支持该项目",
+                donate_desc: "有了您的支持，Telegpad 将始终保持免费且无广告。",
+                my_wallet: "我的钱包",
+                tokens_1_price: "1 星 ⭐",
+                tokens_1_text: "7 个代币包 💰",
+                tokens_10_price: "2 星 ⭐",
+                tokens_10_text: "💰💰 16 个代币包",
+                tokens_30_price: "3 星 ⭐",
+                tokens_30_text: "💰💰💰 27 个代币包",
+                infinity_week_price: "10 星 ⭐",
+                infinity_week_text: "♾️ 一个月订阅（无限）",
+                ai_modal_title: "✨ AI 分析",
+                add_ai_res: "添加到笔记",
+                share_ai_res: "分享",
+                copy_ai_res: "复制文本", invite_description: "邀请好友，你们双方都能获赠 3 枚代币！🎁", invite_btn: "邀请朋友",
+                aia_title: "✨ 智能内容助手", aia_topic_label: "您的初始主题或构思：", aia_type_label: "输出文本类型：",
+                aia_topic_text: "例如：说唱歌曲的灵感，或商业合同草案……", aia_gen_btn: "生成文本 (2 tokens 🪙) 🚀",
+                aia_option_idea: "💡 构思与头脑风暴", aia_option_text: "📝 文本草稿或短文",
+                aia_option_email: "💼 正式商务邮件或信函", aia_option_caption: "📱 社交媒体帖文配文",
+                aia_option_rewrite: "🎯 文本摘要与改写", aia_option_lyric: "🎵 创意文本（诗歌、说唱段落或场景描述）",
+                aia_gen_label: "📋 生成的文本：", aia_gen_to_note: "⚡ 直接保存至笔记", aia_btn: "✨ 智能助手"
+            }
+        };
+        let currentLang = 'en';
+        let currentTheme = 'system';
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            document.body.dir = (lang === 'fa' || lang === 'ar') ? 'rtl' : 'ltr';
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                const translation = translations[lang][key];
+
+                if (translation) {
+                    if (el.tagName === 'OPTION') {
+                        el.value = translation;
+                        el.innerText = translation;
+                    }
+                    else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = translation;
+                    } else {
+                        el.innerText = translation;
+                    }
+                }
+            });
+
+            document.querySelectorAll('[id^="lang-"]').forEach(d => d.classList.remove('active'));
+            document.getElementById(`lang-${lang}`).classList.add('active');
+
+            saveSettings();
+        }
+
+        function changeTheme(theme) {
+            currentTheme = theme;
+            document.body.className = '';
+
+            if (theme === 'system') {
+            } else if (theme === 'dark') {
+                document.body.classList.add('dark-mode');
+            } else if (theme === 'light') {
+                document.body.classList.add('light-mode');
+            }
+
+            document.querySelectorAll('[id^="theme-"]').forEach(d => d.classList.remove('active'));
+            document.getElementById(`theme-${theme}`).classList.add('active');
+
+            saveSettings();
+        }
+
+        async function saveSettings() {
+            localStorage.setItem('user_settings', JSON.stringify({ lang: currentLang, theme: currentTheme }));
+
+            fetch('https://users-settings.telnotepad.workers.dev/settings', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${tg.initData}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ language: currentLang, theme: currentTheme })
+            });
+        }
+
+        function openAiModal() {
+            document.getElementById('ai-assistant-modal').style.display = 'flex';
+            document.getElementById('ai-topic').value = '';
+            document.getElementById('ai-result-container').style.display = 'none';
+            document.getElementById('ai-output').innerText = '';
+        }
+
+        function closeAiModal() {
+            document.getElementById('ai-assistant-modal').style.display = 'none';
+        }
+
+        async function generateAiContent() {
+            const topic = document.getElementById('ai-topic').value.trim();
+            const contentType = document.getElementById('ai-type').value;
+            const genBtn = document.getElementById('generate-ai-btn');
+            const resultContainer = document.getElementById('ai-result-container');
+            const outputDiv = document.getElementById('ai-output');
+
+            if (!topic) {
+                if (currentLang === 'fa') {
+                    tg.showAlert("لطفاً ابتدا موضوع یا ایده خود را بنویسید!");
+                }
+                else if (currentLang === 'en') {
+                    tg.showAlert("Please write your topic or idea first!");
+                }
+                else if (currentLang === 'ru') {
+                    tg.showAlert("Пожалуйста, сначала напишите свою тему или идею!");
+                }
+                else if (currentLang === 'ar') {
+                    tg.showAlert("يرجى كتابة موضوعك أو فكرتك أولاً!");
+                }
+                else if (currentLang === 'zh') {
+                    tg.showAlert("请先写下您的主题或想法！");
+                }
+                else {
+                    tg.showAlert("Please write your topic or idea first!");
+                }
+                return;
+            }
+
+            // تغییر حالت دکمه به لودینگ
+            genBtn.disabled = true;
+            if (currentLang === 'fa') {
+                genBtn.innerText = "در حال پردازش در هسته هوشمند... 🧠";
+            }
+            else if (currentLang === 'en') {
+                genBtn.innerText = "Processing in smart core... 🧠";
+            }
+            else if (currentLang === 'ru') {
+                genBtn.innerText = "Обработка в интеллектуальном ядре... 🧠";
+            }
+            else if (currentLang === 'ar') {
+                genBtn.innerText = "جاري المعالجة في النواة الذكية... 🧠";
+            }
+            else if (currentLang === 'zh') {
+                genBtn.innerText = "正在智能核心中处理…… 🧠";
+            }
+            else {
+                genBtn.innerText = "Processing in smart core... 🧠";
+            }
+            resultContainer.style.display = 'none';
+
+            try {
+                const response = await fetch('https://users-settings.telnotepad.workers.dev/chat-gemini', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${tg.initData}`
+                    },
+                    body: JSON.stringify({
+                        topic: topic,
+                        contentType: contentType,
+                        language: currentLang
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    if (data.needs_upgrade) {
+                        if (currentLang === 'fa') {
+                            tg.showAlert("❌ توکن شما کافی نیست!\n" + data.error);
+                        }
+                        else {
+                            tg.showAlert("❌ Your token is not enough!\n" + data.error);
+                        }
+                        closeAiModal();
+                        openWalletModal();
+                    } else {
+                        if (currentLang === 'fa') {
+                            tg.showAlert("خطا: " + (data.error || "مشکلی در تولید متن به وجود آمد."));
+                        }
+                        else {
+                            tg.showAlert("Error: " + (data.error || "There was a problem generating the text."));
+                        }
+                    }
+                    return;
+                }
+
+                outputDiv.innerText = data.reply;
+                resultContainer.style.display = 'block';
+                updateUIWithWallet();
+				
+            } catch (error) {
+                console.error("AI Error:", error);
+                tg.showAlert("Please try again!");
+            } finally {
+                genBtn.disabled = false;
+                if (currentLang === 'fa') {
+                    genBtn.innerText = "تولید متن (۲ توکن 🪙) 🚀";
+                }
+                else if (currentLang === 'en') {
+                    genBtn.innerText = "Text generation (2 TOKENs 🪙) 🚀";
+                }
+                else if (currentLang === 'ru') {
+                    genBtn.innerText = "Генерация текста (2 токена 🪙) 🚀";
+                }
+                else if (currentLang === 'ar') {
+                    genBtn.innerText = "توليد النص (رمزان 🪙) 🚀";
+                }
+                else if (currentLang === 'zh') {
+                    genBtn.innerText = "“文本生成 (2 个 Token 🪙) 🚀”";
+                }
+                else {
+                    genBtn.innerText = "Text generation (2 TOKENs 🪙) 🚀";
+                }
+            }
+        }
+
+        function insertAiTextToNote() {
+            const aiText = document.getElementById('ai-output').innerText;
+            if (!aiText) return;
+            openUpdateEditor(currentNoteId, aiText);
+            closeAiModal();
+        }
+
+        async function initApp() {
+            if (!tg.initData) return;
+
+            const localSettings = JSON.parse(localStorage.getItem('user_settings'));
+            if (localSettings) {
+                changeLanguage(localSettings.lang);
+                changeTheme(localSettings.theme);
+            }
+
+            try {
+                const response = await fetch('https://users-settings.telnotepad.workers.dev/init', {
+                    headers: { 'Authorization': `Bearer ${tg.initData}` }
+                });
+                const data = await response.json();
+
+                if (data.settings) {
+                    changeLanguage(data.settings.language);
+                    changeTheme(data.settings.theme);
+                }
+
+                if (data.settings.is_infinity === 1) {
+                    document.getElementById('user-status-badge').innerHTML = ' <span class="infinity-badge">∞ Infinity</span>';
+                    localStorage.setItem('is_infinity', 'true');
+                }
+				
+                if (data.is_first_time) {
+                    changeLanguage('en');
+                    showAppInfo();
+                }
+
+                fetchNotes();
+                updateUIWithWallet(data.settings);
+
+            } catch (e) {
+                console.error("Init Error", e);
+                fetchNotes();
+            }
+        }
+
+        function showDonateModal() {
+            document.getElementById('donate-modal').classList.add('active');
+        }
+
+        async function showWalletModal() {
+            document.getElementById('wallet-modal').classList.add('active');
+
+            try {
+                const response = await fetch('https://users-settings.telnotepad.workers.dev/init', {
+                    headers: { 'Authorization': `Bearer ${tg.initData}` }
+                });
+                const data = await response.json();
+                updateUIWithWallet(data.settings);
+            } catch (e) { console.error("Wallet update error", e); }
+        }
+
+        function updateUIWithWallet(settings) {
+            const balanceText = document.getElementById('user-balance-text');
+            const modalValue = document.getElementById('modal-balance-value');
+            const expiryText = document.getElementById('expiry-text');
+            const balanceIcon = document.getElementById('user-balance-icon');
+
+            const isInf = settings.is_infinity;
+
+            if (isInf) {
+                modalValue.innerText = "دسترسی نامحدود";
+                document.getElementById('user-status-badge').innerHTML = ' <span class="infinity-badge">∞ Infinity</span>';
+                document.getElementById('btn_infinity').style.display = 'none';
+                if (currentLang === 'fa') {
+                    expiryText.innerText = "انقضا: " + new Date(settings.infinity_expiry).toLocaleDateString('fa-IR');
+                } else { expiryText.innerText = "Expire: " + new Date(settings.infinity_expiry).toLocaleDateString(); }
+            } else {
+                document.getElementById('user-status-badge').innerHTML = '';
+                document.getElementById('btn_infinity').style.display = 'block';
+                balanceText.innerText = settings.tokens;
+                modalValue.innerText = settings.tokens + " TOKENs";
+                balanceIcon.innerText = "🪙";
+                if (currentLang === 'fa') {
+                    expiryText.innerText = "شما در حال استفاده از پلن رایگان هستید.";
+                } else { expiryText.innerText = "You are using the Free plan."; }
+            }
+        }
+
+        async function sendDonate(starsAmount) {
+            if (currentLang === 'fa') {
+                tg.MainButton.setText("در حال ایجاد فاکتور...").show().disable();
+            } else {
+                tg.MainButton.setText("Creating invoice...").show().disable();
+            }
+
+            try {
+                const response = await fetch('https://handle-data-01.telnotepad.workers.dev/create-stars-invoice', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${tg.initData}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: starsAmount })
+                });
+
+                const result = await response.json();
+
+                if (result.invoice_link) {
+                    tg.MainButton.hide();
+                    tg.openInvoice(result.invoice_link, async function (status) {
+                        if (status === 'paid') {
+                            await fetch('https://users-settings.telnotepad.workers.dev/confirm-donation', {
+                                method: 'POST',
+                                headers: { 'Authorization': `Bearer ${tg.initData}`, 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ stars_amount: starsAmount }) // اصلاح نام متغیر
+                            });
+
+                            const successMsg = currentLang === 'fa' ?
+                                "تبریک! شما الان عضوی از خانواده ∞ Infinity هستید. خدمات آینده CodeCosmic برای شما رایگان خواهد بود! 😍" :
+                                "Congratulations! You are now a member of the ∞ Infinity family. Future CodeCosmic services will be free for you! 😍";
+
+                            tg.showAlert(successMsg);
+                            location.reload();
+                            closeModal('donate-modal');
+                        } else if (status === 'cancelled') {
+                            const cancelMsg = currentLang === 'fa' ?
+                                "مشکلی نیست، همین که از برنامه استفاده می‌کنی برای من ارزشمنده. 😊" :
+                                "No problem, just using the app is valuable to me. 😊";
+                            tg.showAlert(cancelMsg);
+                        }
+                    });
+                } else {
+                    throw new Error("Invoice link not received");
+                }
+            } catch (e) {
+                console.error("Donate Error:", e);
+                const errMsg = currentLang === 'fa' ? "خطا در اتصال به درگاه پرداخت 🙄" : "Error connecting to payment gateway 🙄";
+                tg.showAlert(errMsg);
+            } finally {
+                tg.MainButton.hide();
+            }
+        }
+
+        async function buyItem(itemId) {
+            if (itemId === 'infinity_month') {
+                if (document.getElementById('user-status-badge').innerHTML != '') {
+                    const errMsg = currentLang === 'fa' ? "شما اشتراک بی‌نهایت دارید 🙃" : "You have Infinity subscription 🙃";
+                    tg.showAlert(errMsg);
+                }
+            } else {
+                if (currentLang === 'fa') {
+                    tg.MainButton.setText("در حال ایجاد فاکتور...").show().disable();
+                } else {
+                    tg.MainButton.setText("Creating invoice...").show().disable();
+                }
+
+                try {
+                    const response = await fetch('https://users-settings.telnotepad.workers.dev/create-invoice', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${tg.initData}` },
+                        body: JSON.stringify({ itemId })
+                    });
+                    const { invoiceLink } = await response.json();
+
+                    tg.openInvoice(invoiceLink, (status) => {
+                        if (status === 'paid') {
+                            const Msg = currentLang === 'fa' ? "خرید با موفقیت انجام شد! موجودی آپدیت شد :)" : "Purchase successful! Inventory updated :)";
+                            tg.showAlert(Msg);
+                            showWalletModal();
+                        }
+                    });
+                } catch (e) {
+                    const errMsg = currentLang === 'fa' ? "خطا در اتصال به درگاه پرداخت 🙄" : "Error connecting to payment gateway 🙄";
+                    tg.showAlert(errMsg);
+                } finally {
+                    tg.MainButton.hide();
+                }
+            }
+        }
+
+        function generateReferralLink() {
+            const botUsername = "TelegpadBot";
+            const appName = "notes";
+            const refLink = `https://t.me/${botUsername}/${appName}?startapp=ref_${tg.initDataUnsafe.user.id}`;
+            if (currentLang === 'fa') {
+                tg.showAlert("لینک دعوت کپی شد!");
+            }
+            else {
+                tg.showAlert("InviteLink Copied!");
+            }
+			
+            tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent("I use Telegpad for smart note-taking. Sign up with this link and we'll both get tokens! 🤫🚀")}`);
+        }
+
+        function showAppSettings() { document.getElementById('settings-modal').classList.add('active'); }
+
+        function showAppInfo() { document.getElementById('info-modal').classList.add('active'); }
+
+        window.addEventListener('load', initApp);
+
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        window.addEventListener('load', () => {
+            if (tg.initData) fetchNotes();
+            else document.body.innerHTML = "Please login with Telegram ;)";
+        });
+    </script>
+</body>
+
+</html>
